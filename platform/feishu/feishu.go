@@ -1,4 +1,4 @@
-package feishu
+﻿package feishu
 
 import (
 	"bytes"
@@ -158,7 +158,7 @@ type Platform struct {
 	// cardActionMessageIDs tracks the most recent card-action messageID per
 	// session key, enabling async card refreshes via the Patch API.
 	cardActionMsgMu  sync.Mutex
-	cardActionMsgIDs map[string]string // sessionKey → messageID
+	cardActionMsgIDs map[string]string // sessionKey 鈫?messageID
 	// activeThreadSessions tracks thread sessionKeys that have already been
 	// accepted by the bot. In group chats with thread_isolation, once a thread
 	// has been engaged (the first @bot message), subsequent attachment-only
@@ -374,7 +374,7 @@ func (p *Platform) Start(handler core.MessageHandler) error {
 	p.sharedGroup = group
 	p.isWSPrimary = isPrimary
 
-	// Secondary platforms skip connection creation — the primary's connection
+	// Secondary platforms skip connection creation 鈥?the primary's connection
 	// fans out events to all platforms in the shared group.
 	if !isPrimary {
 		return nil
@@ -534,9 +534,9 @@ func (p *Platform) webhookHandler(w http.ResponseWriter, r *http.Request) {
 
 // onCardAction handles card.action.trigger callbacks via the official SDK event dispatcher.
 // Three prefixes are supported:
-//   - nav:/xxx   — render a card page and update the original card in-place
-//   - act:/xxx   — execute an action, then render and update the card in-place
-//   - cmd:/xxx   — legacy: dispatch as a user command (sends a new message)
+//   - nav:/xxx   鈥?render a card page and update the original card in-place
+//   - act:/xxx   鈥?execute an action, then render and update the card in-place
+//   - cmd:/xxx   鈥?legacy: dispatch as a user command (sends a new message)
 func (p *Platform) onCardAction(event *callback.CardActionTriggerEvent) (*callback.CardActionTriggerResponse, error) {
 	if event.Event == nil || event.Event.Action == nil {
 		return nil, nil
@@ -585,7 +585,7 @@ func (p *Platform) onCardAction(event *callback.CardActionTriggerEvent) (*callba
 	}
 	sessionKey := p.sessionKeyFromCardAction(chatID, userID, event.Event.Action.Value)
 
-	// nav: / act: — synchronous card update
+	// nav: / act: 鈥?synchronous card update
 	if strings.HasPrefix(actionVal, "nav:") || strings.HasPrefix(actionVal, "act:") {
 		if messageID != "" {
 			p.cardActionMsgMu.Lock()
@@ -601,7 +601,7 @@ func (p *Platform) onCardAction(event *callback.CardActionTriggerEvent) (*callba
 			return &callback.CardActionTriggerResponse{
 				Toast: &callback.Toast{
 					Type:    "info",
-					Content: "已记录选择（Selection recorded）",
+					Content: "宸茶褰曢€夋嫨锛圫election recorded锛?,
 				},
 			}, nil
 		}
@@ -636,7 +636,7 @@ func (p *Platform) onCardAction(event *callback.CardActionTriggerEvent) (*callba
 				return &callback.CardActionTriggerResponse{
 					Toast: &callback.Toast{
 						Type:    "info",
-						Content: "⏳ Loading... / 加载中...",
+						Content: "鈴?Loading... / 鍔犺浇涓?..",
 					},
 				}, nil
 			}
@@ -649,7 +649,7 @@ func (p *Platform) onCardAction(event *callback.CardActionTriggerEvent) (*callba
 		return nil, nil
 	}
 
-	// perm: — permission response with in-place card update
+	// perm: 鈥?permission response with in-place card update
 	if strings.HasPrefix(actionVal, "perm:") {
 		var responseText string
 		switch actionVal {
@@ -693,7 +693,7 @@ func (p *Platform) onCardAction(event *callback.CardActionTriggerEvent) (*callba
 		}, nil
 	}
 
-	// askq: — AskUserQuestion option selected, forward as user message
+	// askq: 鈥?AskUserQuestion option selected, forward as user message
 	if strings.HasPrefix(actionVal, "askq:") {
 		rctx := replyContext{messageID: messageID, chatID: chatID, sessionKey: sessionKey}
 		h := p.getHandler()
@@ -712,11 +712,11 @@ func (p *Platform) onCardAction(event *callback.CardActionTriggerEvent) (*callba
 		if answerLabel == "" {
 			answerLabel = actionVal
 		}
-		cb := core.NewCard().Title("✅ "+answerLabel, "green")
+		cb := core.NewCard().Title("鉁?"+answerLabel, "green")
 		if askqQuestion != "" {
 			cb.Markdown(askqQuestion)
 		}
-		cb.Markdown("**→ " + answerLabel + "**")
+		cb.Markdown("**鈫?" + answerLabel + "**")
 		return &callback.CardActionTriggerResponse{
 			Card: &callback.Card{
 				Type: "raw",
@@ -725,7 +725,7 @@ func (p *Platform) onCardAction(event *callback.CardActionTriggerEvent) (*callba
 		}, nil
 	}
 
-	// cmd: — async command dispatch
+	// cmd: 鈥?async command dispatch
 	if strings.HasPrefix(actionVal, "cmd:") {
 		cmdText := strings.TrimPrefix(actionVal, "cmd:")
 		rctx := replyContext{messageID: messageID, chatID: chatID, sessionKey: sessionKey}
@@ -871,7 +871,7 @@ func isMessageWithdrawnCode(code int, msg string) bool {
 	if code == 230011 {
 		return true
 	}
-	for _, needle := range []string{"withdrawn", "recalled", "recall", "deleted", "not found", "not exist", "撤回"} {
+	for _, needle := range []string{"withdrawn", "recalled", "recall", "deleted", "not found", "not exist", "鎾ゅ洖"} {
 		if strings.Contains(msg, needle) {
 			return true
 		}
@@ -1093,7 +1093,7 @@ func (p *Platform) onMessage(ctx context.Context, event *larkim.P2MessageReceive
 		return nil
 	}
 
-	// Capture content before going async — the SDK may reuse the event object.
+	// Capture content before going async 鈥?the SDK may reuse the event object.
 	content := ""
 	if msg.Content != nil {
 		content = *msg.Content
@@ -1140,7 +1140,7 @@ func (p *Platform) dispatchMessage(ctx context.Context, msgType, content string,
 	// If this message is a reply to another message, fetch the quoted content
 	// and prepend it so the agent has full context.
 	// Skip quote injection when thread_isolation is enabled and the message is
-	// inside a thread — the thread already provides conversational context, and
+	// inside a thread 鈥?the thread already provides conversational context, and
 	// long quoted prefixes can drown out the user's actual text (issue #764).
 	var quoted quotedMessage
 	if parentID != "" && !(p.threadIsolation && isThreadSessionKey(sessionKey)) {
@@ -1183,7 +1183,7 @@ func (p *Platform) dispatchMessage(ctx context.Context, msgType, content string,
 		imgData, mimeType, err := p.downloadImage(messageID, imgBody.ImageKey)
 		if err != nil {
 			slog.Error(p.tag()+": download image failed", "error", err)
-			if sendErr := p.Send(ctx, rctx, "⚠️ Image download failed (network error). Please resend."); sendErr != nil {
+			if sendErr := p.Send(ctx, rctx, "鈿狅笍 Image download failed (network error). Please resend."); sendErr != nil {
 				slog.Error(p.tag()+": failed to notify user about image download failure", "error", sendErr)
 			}
 			return
@@ -1209,7 +1209,7 @@ func (p *Platform) dispatchMessage(ctx context.Context, msgType, content string,
 		audioData, err := p.downloadResource(messageID, audioBody.FileKey, "file")
 		if err != nil {
 			slog.Error(p.tag()+": download audio failed", "error", err)
-			if sendErr := p.Send(ctx, rctx, "⚠️ Voice message download failed (network error). Please resend."); sendErr != nil {
+			if sendErr := p.Send(ctx, rctx, "鈿狅笍 Voice message download failed (network error). Please resend."); sendErr != nil {
 				slog.Error(p.tag()+": failed to notify user about audio download failure", "error", sendErr)
 			}
 			return
@@ -1254,7 +1254,7 @@ func (p *Platform) dispatchMessage(ctx context.Context, msgType, content string,
 		fileData, err := p.downloadResource(messageID, fileBody.FileKey, "file")
 		if err != nil {
 			slog.Error(p.tag()+": download file failed", "error", err)
-			if sendErr := p.Send(ctx, rctx, "⚠️ File download failed (network error). Please resend."); sendErr != nil {
+			if sendErr := p.Send(ctx, rctx, "鈿狅笍 File download failed (network error). Please resend."); sendErr != nil {
 				slog.Error(p.tag()+": failed to notify user about file download failure", "error", sendErr)
 			}
 			return
@@ -1587,7 +1587,7 @@ const maxReplyChainDepth = 5
 // is replying to, and returns formatted context plus downloaded attachments.
 // For multi-level reply chains, it traces parent_id links up to maxReplyChainDepth
 // levels and returns the full conversation chain.
-// Returns empty content on any failure (graceful degradation — the user's own
+// Returns empty content on any failure (graceful degradation 鈥?the user's own
 // message is still delivered without the quote).
 func (p *Platform) fetchQuotedMessage(ctx context.Context, parentID string) quotedMessage {
 	chain := p.fetchReplyChain(ctx, parentID, maxReplyChainDepth)
@@ -1599,7 +1599,7 @@ func (p *Platform) fetchQuotedMessage(ctx context.Context, parentID string) quot
 
 // resolveBotSenderName returns a display name for a bot sender in a quoted
 // reply chain. Feishu sets sender.id to the bot's app_id (globally stable,
-// not an open_id). We consult the peer_bots config to map app_id → alias;
+// not an open_id). We consult the peer_bots config to map app_id 鈫?alias;
 // if the app is unknown, we surface the app_id so operators can add it to
 // the config rather than seeing an ambiguous "Bot".
 func (p *Platform) resolveBotSenderName(appID string) string {
@@ -2480,23 +2480,32 @@ func predictMsgType(content string) string {
 	if !containsMarkdown(content) {
 		return larkim.MsgTypeText
 	}
-	if countMarkdownTables(content) <= maxCardTables {
+	// Tables require interactive card (Post format cannot render tables).
+	// Everything else uses structured Post for better text rendering.
+	if countMarkdownTables(content) > 0 {
 		return larkim.MsgTypeInteractive
 	}
 	return larkim.MsgTypePost
-}
 
 func buildReplyContent(content string) (msgType string, body string) {
 	if !containsMarkdown(content) {
 		b, _ := json.Marshal(map[string]string{"text": content})
 		return larkim.MsgTypeText, string(b)
 	}
-	// Prefer card for all markdown content — card schema 2.0 has the best
-	// markdown rendering (headings, blockquotes, code blocks, tables, links,
-	// strikethrough, etc.). Only fall back to post md tag when the content
-	// exceeds the card table limit (Feishu API error 11310: max 5 tables).
-	if countMarkdownTables(content) > maxCardTables {
-		return larkim.MsgTypePost, buildPostMdJSON(content)
+	// Tables require interactive card (Post format has no table element).
+	// For all other markdown, use structured Post format which gives:
+	// - Native code blocks (syntax-aware, copyable)
+	// - Proper inline formatting (bold, italic, code, strikethrough, links)
+	// - Better font sizing than card markdown elements
+	if countMarkdownTables(content) > 0 {
+		if countMarkdownTables(content) > maxCardTables {
+			// Too many tables for a single card; fall back to Post with raw md tag
+			return larkim.MsgTypePost, buildPostMdJSON(content)
+		}
+		return larkim.MsgTypeInteractive, buildCardJSON(sanitizeMarkdownURLs(preprocessFeishuMarkdown(content)))
+	}
+	return larkim.MsgTypePost, buildPostJSON(sanitizeMarkdownURLs(content))
+}
 	}
 	return larkim.MsgTypeInteractive, buildCardJSON(sanitizeMarkdownURLs(preprocessFeishuMarkdown(content)))
 }
@@ -2592,10 +2601,21 @@ func buildPostJSON(content string) string {
 	var codeLines []string
 	codeLang := ""
 
+	// flushPendingEmpty handles consecutive blank lines by emitting at most one empty paragraph.
+	pendingEmpty := false
+	emitEmpty := func() {
+		if pendingEmpty {
+			postLines = append(postLines, []map[string]any{{"tag": "text", "text": ""}})
+			pendingEmpty = false
+		}
+	}
+
 	for _, line := range lines {
 		trimmed := strings.TrimSpace(line)
 
+		// Code block toggle
 		if strings.HasPrefix(trimmed, "```") {
+			emitEmpty()
 			if !inCodeBlock {
 				inCodeBlock = true
 				codeLang = strings.TrimPrefix(trimmed, "```")
@@ -2616,7 +2636,43 @@ func buildPostJSON(content string) string {
 			continue
 		}
 
-		// Convert # headers to bold
+		// Blank line → paragraph separator
+		if trimmed == "" {
+			pendingEmpty = true
+			continue
+		}
+
+		emitEmpty()
+
+		// Horizontal rule
+		if trimmed == "---" || trimmed == "***" || trimmed == "___" {
+			postLines = append(postLines, []map[string]any{{"tag": "text", "text": "───"}})
+			continue
+		}
+
+		// Blockquote: strip leading ">" and prefix with block indicator
+		if strings.HasPrefix(trimmed, "> ") {
+			content := strings.TrimPrefix(trimmed, "> ")
+			content = strings.TrimSpace(content)
+			if content != "" {
+				line = "\u25a0 " + content
+			}
+		} else if trimmed == ">" {
+			continue
+		} else if strings.HasPrefix(trimmed, ">") {
+			content := strings.TrimSpace(strings.TrimPrefix(trimmed, ">"))
+			if content != "" {
+				line = "\u25a0 " + content
+			}
+		}
+
+		// Unordered list: "- " or "* " → bullet (but not "**" which is bold)
+		if (strings.HasPrefix(trimmed, "- ") || strings.HasPrefix(trimmed, "* ")) &&
+			!strings.HasPrefix(trimmed, "**") {
+			line = "\u2022 " + trimmed[2:]
+		}
+
+		// Convert # headings to bold
 		headerLine := line
 		for level := 6; level >= 1; level-- {
 			prefix := strings.Repeat("#", level) + " "
@@ -2651,10 +2707,6 @@ func buildPostJSON(content string) string {
 	b, _ := json.Marshal(post)
 	return string(b)
 }
-
-// isValidFeishuHref checks whether a URL is acceptable as a Feishu post href.
-// Feishu rejects non-HTTP(S) URLs with "invalid href" (code 230001).
-func isValidFeishuHref(u string) bool {
 	return strings.HasPrefix(u, "http://") || strings.HasPrefix(u, "https://")
 }
 
@@ -3067,7 +3119,7 @@ func isTransientError(err error) bool {
 	if err == nil {
 		return false
 	}
-	// Typed syscall checks — more robust than string matching.
+	// Typed syscall checks 鈥?more robust than string matching.
 	if errors.Is(err, syscall.ECONNRESET) || errors.Is(err, syscall.EPIPE) {
 		return true
 	}
@@ -3198,7 +3250,7 @@ type feishuPreviewHandle struct {
 
 // buildCardJSON builds a Feishu interactive card JSON string with a markdown element.
 // Uses schema 2.0 which supports code blocks, tables, and inline formatting.
-// Card font is inherently smaller than Post/Text — this is a Feishu platform limitation.
+// Card font is inherently smaller than Post/Text 鈥?this is a Feishu platform limitation.
 func buildCardJSON(content string) string {
 	card := map[string]any{
 		"schema": "2.0",
@@ -3236,19 +3288,19 @@ func progressStateMeta(state core.ProgressCardState, lang string, agent string) 
 	switch state {
 	case core.ProgressCardStateCompleted:
 		if zh {
-			return fmt.Sprintf("%s · 已完成", agent), "green", "本过程卡片已停止更新，完整答复见下一条消息。"
+			return fmt.Sprintf("%s 路 宸插畬鎴?, agent), "green", "鏈繃绋嬪崱鐗囧凡鍋滄鏇存柊锛屽畬鏁寸瓟澶嶈涓嬩竴鏉℃秷鎭€?
 		}
-		return fmt.Sprintf("%s · Completed", agent), "green", "This progress card is no longer updating. Full response is in the next message."
+		return fmt.Sprintf("%s 路 Completed", agent), "green", "This progress card is no longer updating. Full response is in the next message."
 	case core.ProgressCardStateFailed:
 		if zh {
-			return fmt.Sprintf("%s · 失败", agent), "red", "本过程卡片已停止更新（失败），完整错误说明见下一条消息。"
+			return fmt.Sprintf("%s 路 澶辫触", agent), "red", "鏈繃绋嬪崱鐗囧凡鍋滄鏇存柊锛堝け璐ワ級锛屽畬鏁撮敊璇鏄庤涓嬩竴鏉℃秷鎭€?
 		}
-		return fmt.Sprintf("%s · Failed", agent), "red", "This progress card has stopped (failed). See the next message for details."
+		return fmt.Sprintf("%s 路 Failed", agent), "red", "This progress card has stopped (failed). See the next message for details."
 	default:
 		if zh {
-			return fmt.Sprintf("%s · 进行中", agent), "blue", ""
+			return fmt.Sprintf("%s 路 杩涜涓?, agent), "blue", ""
 		}
-		return fmt.Sprintf("%s · Running", agent), "blue", ""
+		return fmt.Sprintf("%s 路 Running", agent), "blue", ""
 	}
 }
 
@@ -3257,27 +3309,27 @@ func progressKindLabel(kind core.ProgressCardEntryKind, lang string) string {
 	switch kind {
 	case core.ProgressEntryThinking:
 		if zh {
-			return "思考"
+			return "鎬濊€?
 		}
 		return "Thinking"
 	case core.ProgressEntryToolUse:
 		if zh {
-			return "工具调用"
+			return "宸ュ叿璋冪敤"
 		}
 		return "Tool"
 	case core.ProgressEntryToolResult:
 		if zh {
-			return "工具结果"
+			return "宸ュ叿缁撴灉"
 		}
 		return "Result"
 	case core.ProgressEntryError:
 		if zh {
-			return "错误"
+			return "閿欒"
 		}
 		return "Error"
 	default:
 		if zh {
-			return "更新"
+			return "鏇存柊"
 		}
 		return "Update"
 	}
@@ -3298,13 +3350,13 @@ func normalizeProgressItems(payload *core.ProgressCardPayload) []core.ProgressCa
 		}
 		kind := core.ProgressEntryInfo
 		switch {
-		case strings.HasPrefix(entry, "💭"):
+		case strings.HasPrefix(entry, "馃挱"):
 			kind = core.ProgressEntryThinking
-		case strings.HasPrefix(entry, "🔧"), strings.Contains(entry, "**Tool #"):
+		case strings.HasPrefix(entry, "馃敡"), strings.Contains(entry, "**Tool #"):
 			kind = core.ProgressEntryToolUse
-		case strings.HasPrefix(entry, "🧾"):
+		case strings.HasPrefix(entry, "馃Ь"):
 			kind = core.ProgressEntryToolResult
-		case strings.HasPrefix(entry, "❌"):
+		case strings.HasPrefix(entry, "鉂?):
 			kind = core.ProgressEntryError
 		}
 		out = append(out, core.ProgressCardEntry{Kind: kind, Text: entry})
@@ -3357,13 +3409,13 @@ func formatTodoWriteInput(text string, lang string) string {
 		var icon string
 		switch strings.ToLower(strings.TrimSpace(todo.Status)) {
 		case "completed":
-			icon = "✅"
+			icon = "鉁?
 		case "in_progress":
-			icon = "🔄"
+			icon = "馃攧"
 		case "pending":
-			icon = "⏳"
+			icon = "鈴?
 		default:
-			icon = "•"
+			icon = "鈥?
 		}
 
 		content := strings.TrimSpace(todo.Content)
@@ -3435,7 +3487,7 @@ func formatProgressToolResult(text string) string {
 
 func progressNoOutputText(lang string) string {
 	if isZhLikeProgressLang(lang) {
-		return "无输出"
+		return "鏃犺緭鍑?
 	}
 	return "No output"
 }
@@ -3443,23 +3495,23 @@ func progressNoOutputText(lang string) string {
 func progressResultDot(item core.ProgressCardEntry) string {
 	if item.Success != nil {
 		if *item.Success {
-			return "🟢"
+			return "馃煝"
 		}
-		return "🔴"
+		return "馃敶"
 	}
 	if item.ExitCode != nil {
 		if *item.ExitCode == 0 {
-			return "🟢"
+			return "馃煝"
 		}
-		return "🔴"
+		return "馃敶"
 	}
 	if strings.EqualFold(strings.TrimSpace(item.Status), "completed") || strings.EqualFold(strings.TrimSpace(item.Status), "success") || strings.EqualFold(strings.TrimSpace(item.Status), "succeeded") || strings.EqualFold(strings.TrimSpace(item.Status), "ok") {
-		return "🟢"
+		return "馃煝"
 	}
 	if strings.EqualFold(strings.TrimSpace(item.Status), "failed") || strings.EqualFold(strings.TrimSpace(item.Status), "error") {
-		return "🔴"
+		return "馃敶"
 	}
-	return "⚪"
+	return "鈿?
 }
 
 func renderProgressEntryElement(item core.ProgressCardEntry, lang string) map[string]any {
@@ -3473,7 +3525,7 @@ func renderProgressEntryElement(item core.ProgressCardEntry, lang string) map[st
 			"tag": "div",
 			"text": map[string]any{
 				"tag":        "plain_text",
-				"content":    "💭 " + inlineCodeText(text),
+				"content":    "馃挱 " + inlineCodeText(text),
 				"text_size":  "notation",
 				"text_color": "grey",
 			},
@@ -3539,7 +3591,7 @@ func buildProgressCardJSONFromPayload(payload *core.ProgressCardPayload) string 
 	if payload.Truncated {
 		truncatedText := "Showing latest updates only."
 		if isZhLikeProgressLang(payload.Lang) {
-			truncatedText = "仅显示最近更新。"
+			truncatedText = "浠呮樉绀烘渶杩戞洿鏂般€?
 		}
 		elements = append(elements, map[string]any{
 			"tag": "div",
@@ -3982,11 +4034,9 @@ func (p *Platform) onBotMenu(event *larkapplication.P2BotMenuV6) error {
 	return nil
 }
 
-// ═══════════════════════════════════════════════════════════════
-// Card 2.0 rich card support (based on upstream PR #309 + #306,
+// 鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺?// Card 2.0 rich card support (based on upstream PR #309 + #306,
 // extended with "agent reply elapsed time" in the footer).
-// ═══════════════════════════════════════════════════════════════
-
+// 鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺?
 const defaultToolIcon = "setting-inter_outlined"
 
 var toolIconMap = map[string]string{
@@ -4121,23 +4171,22 @@ func buildCardJSONWithStatus(content string, status core.CardStatus) string {
 }
 
 // formatElapsedCN renders a human-readable duration in Chinese.
-// Examples: "3.2 秒", "1 分 23 秒", "1 小时 05 分"。
-func formatElapsedCN(d time.Duration) string {
+// Examples: "3.2 绉?, "1 鍒?23 绉?, "1 灏忔椂 05 鍒?銆?func formatElapsedCN(d time.Duration) string {
 	if d < 0 {
 		d = 0
 	}
 	totalSec := int64(d / time.Second)
 	switch {
 	case d < time.Minute:
-		return fmt.Sprintf("%.1f 秒", d.Seconds())
+		return fmt.Sprintf("%.1f 绉?, d.Seconds())
 	case d < time.Hour:
 		m := totalSec / 60
 		s := totalSec % 60
-		return fmt.Sprintf("%d 分 %02d 秒", m, s)
+		return fmt.Sprintf("%d 鍒?%02d 绉?, m, s)
 	default:
 		h := totalSec / 3600
 		m := (totalSec % 3600) / 60
-		return fmt.Sprintf("%d 小时 %02d 分", h, m)
+		return fmt.Sprintf("%d 灏忔椂 %02d 鍒?, h, m)
 	}
 }
 
@@ -4170,7 +4219,7 @@ func buildRichCard(status core.CardStatus, _ string, steps []core.ToolStep, mark
 			var toolParts []string
 			for _, name := range toolOrder {
 				if toolCounts[name] > 1 {
-					toolParts = append(toolParts, fmt.Sprintf("%s×%d", name, toolCounts[name]))
+					toolParts = append(toolParts, fmt.Sprintf("%s脳%d", name, toolCounts[name]))
 				} else {
 					toolParts = append(toolParts, name)
 				}
@@ -4184,7 +4233,7 @@ func buildRichCard(status core.CardStatus, _ string, steps []core.ToolStep, mark
 				preview = string(runes[:20]) + "..."
 			}
 			if preview != "" {
-				panelTitle = fmt.Sprintf("%s · %s", toolSummary, preview)
+				panelTitle = fmt.Sprintf("%s 路 %s", toolSummary, preview)
 			} else {
 				panelTitle = toolSummary
 			}
@@ -4223,7 +4272,7 @@ func buildRichCard(status core.CardStatus, _ string, steps []core.ToolStep, mark
 		if overflow > 0 {
 			panelElements = append(panelElements, map[string]any{
 				"tag":  "div",
-				"text": map[string]any{"tag": "plain_text", "content": fmt.Sprintf("… and %d more steps", overflow)},
+				"text": map[string]any{"tag": "plain_text", "content": fmt.Sprintf("鈥?and %d more steps", overflow)},
 			})
 		}
 	}
@@ -4245,15 +4294,15 @@ func buildRichCard(status core.CardStatus, _ string, steps []core.ToolStep, mark
 		"content": preprocessFeishuMarkdown(markdown),
 	}
 
-	// Footer shows elapsed time: "⏱ 运行中 12.3 秒..." during streaming,
-	// "⏱ 用时 1 分 23 秒" on completion. Skip when elapsed == 0 to avoid noise.
+	// Footer shows elapsed time: "鈴?杩愯涓?12.3 绉?.." during streaming,
+	// "鈴?鐢ㄦ椂 1 鍒?23 绉? on completion. Skip when elapsed == 0 to avoid noise.
 	var footerMap map[string]any
 	if elapsed > 0 {
 		var footerText string
 		if streaming {
-			footerText = fmt.Sprintf("⏱ 运行中 %s...", formatElapsedCN(elapsed))
+			footerText = fmt.Sprintf("鈴?杩愯涓?%s...", formatElapsedCN(elapsed))
 		} else {
-			footerText = fmt.Sprintf("⏱ 用时 %s", formatElapsedCN(elapsed))
+			footerText = fmt.Sprintf("鈴?鐢ㄦ椂 %s", formatElapsedCN(elapsed))
 		}
 		footerMap = map[string]any{
 			"tag": "div",
