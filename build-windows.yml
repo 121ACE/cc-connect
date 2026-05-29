@@ -1,0 +1,49 @@
+﻿name: Build Windows Binary
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'platform/feishu/feishu.go'
+      - '.github/workflows/build-windows.yml'
+
+jobs:
+  build-windows:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+          cache-dependency-path: web/pnpm-lock.yaml
+
+      - name: Build web assets
+        working-directory: web
+        run: |
+          pnpm install --frozen-lockfile
+          pnpm build
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: 'go.mod'
+          cache: true
+
+      - name: Cross-compile for Windows
+        run: |
+          GOOS=windows GOARCH=amd64 CGO_ENABLED=0 go build -o cc-connect.exe -ldflags="-s -w" ./cmd/cc-connect
+
+      - name: Upload binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: cc-connect-windows
+          path: cc-connect.exe
